@@ -18,5 +18,4 @@ insert into Pripada (idOsoblja, idOdeljenja, idPozicije) values (14, 6, 11);
 insert into Pripada (idOsoblja, idOdeljenja, idPozicije) values (14, 3, 12);
 insert into Pripada (idOsoblja, idOdeljenja, idPozicije) values (14, 1, 12);
 insert into Pripada (idOsoblja, idOdeljenja, idPozicije) values (15, 5, 10);
-
-
+insert into Pripada (idOsoblja, idOdeljenja, idPozicije) values (16, 2, 13);

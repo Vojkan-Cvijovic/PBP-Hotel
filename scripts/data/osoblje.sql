@@ -37,15 +37,19 @@ insert into Osoblje (ime, prezime, adresa, grad, postanskiKod, drzava, brojTelef
 values ("Lazar", "Bogdanovic", "Dalmatinska 14", "Beograd", 11000, "Srbija", "0658479366", "muski");
 
 insert into Osoblje (ime, prezime, adresa, grad, postanskiKod, drzava, brojTelefona, pol) 
-values ("Jovan", "Zoric", "UstaniCka 19", "Beograd", 11000, "Srbija", "0659134666", "muski");
+values ("Jovan", "Zoric", "Ustanicka 19", "Beograd", 11000, "Srbija", "0659134666", "muski");
 
 insert into Osoblje (ime, prezime, adresa, grad, postanskiKod, drzava, brojTelefona, pol) 
-values ("Boban", "Petrovic", "UstaniCka 170", "Beograd", 11000, "Srbija", "0601359466", "muski");
+values ("Boban", "Petrovic", "Ustanicka 170", "Beograd", 11000, "Srbija", "0601359466", "muski");
 
 insert into Osoblje (ime, prezime, adresa, grad, postanskiKod, drzava, brojTelefona, pol) 
 values ("Stevan", "Cvetkovic", "Zdravka Celara 16", "Beograd", 11000, "Srbija", "0651113346", "muski");
 
+insert into Osoblje (ime, prezime, adresa, grad, postanskiKod, drzava, brojTelefona, pol)
+values ("Jelena", "Biorcanin", "Ustanicka 16", "Novi Sad", 21000, "Srbija", "0657352654", "zenski");
 
+insert into Osoblje (ime, prezime, adresa, grad, postanskiKod, drzava, brojTelefona, pol)
+values ("Sanja", "Jokic", "Ustanicka 12", "Novi Sad", 21000, "Srbija", "0657352654", "zenski");
 
-
+delete from Osoblje where ime = "Sanja" and prezime = "Jokic";
 

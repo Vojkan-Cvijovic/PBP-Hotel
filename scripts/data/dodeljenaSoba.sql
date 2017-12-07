@@ -1,0 +1,1 @@
+insert into DodeljenaSoba ( idOsoblja, idSobe) values ( 16, 2);
