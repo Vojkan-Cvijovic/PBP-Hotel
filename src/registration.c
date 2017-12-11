@@ -57,10 +57,13 @@ void list_clients(){
 
 }
 
-void add_person(){
+long long add_person(int type){
+    // type 1: creates client full infomation
+    // type 2: creates client limited info
+    // type 3: creates agent and company
 
-    unsigned long jmbg;
-    unsigned long companyId;
+    long long jmbg;
+    int companyId;
     char first_name[FIRST_NAME_SIZE];
     char last_name[LAST_NAME_SIZE];
     char address[ADDRESS_SIZE];
@@ -76,7 +79,7 @@ void add_person(){
     char option;
 
     clrscr();
-    printf("Welcome to page for adding new client\n");
+    printf("Page for adding new client\n");
 
     printf("Click y/Y to begin with registration, any other key for quit\n");
     scanf("%c", &option);
@@ -86,37 +89,16 @@ void add_person(){
     if(option == 'y' || option == 'Y'){
 
         printf("Enter new clients unique master citizen number\n");
-        scanf("%lu", &jmbg);
+        scanf("%lli", &jmbg);
 
         printf("Enter first name:\n");
         scanf("%s", first_name);
-
         printf("Enter last name:\n");
         scanf("%s", last_name);
-
-        printf("Enter address:\n");
-
-        scanf("%c", &option);
-        fgets(address, sizeof address, stdin);
-        address[strlen(address) - 1] = 0;
-
         printf("Enter city:\n");
         scanf("%s", city);
-
-        printf("Enter zip code:\n");
-        scanf("%u", &zip_code);
-
-        printf("Enter country:\n");
-        scanf("%s", country);
-
         printf("Enter mobile number:\n");
         scanf("%s", mobile);
-
-        printf("Enter email:\n");
-        scanf("%s", email);
-
-        printf("Enter gendure:\n");
-        scanf("%s", gendure);
 
         printf("Select type:\n1. Client\n2. Agent\nInsert 1 or 2\n");
         int type;
@@ -125,35 +107,37 @@ void add_person(){
             scanf("%d", &type);
             if(type == 1 || type == 2)
                 break;
+            if(type == -1)
+                return;
         }
         
-        if(type == 1){
+        if(type == 0){
             printf("Enter personal number:\n");
             scanf("%s", persional_number);
     
             printf("Enter passport number:\n");
             scanf("%s", passport_number);
-        }else{
+        }else if(type == 2){
             list_company();
             printf("Choose id of company from above\n");
-            scanf("%ul", &companyId);
+            scanf("%d", &companyId);
+            if(companyId < 0){
+                companyId = add_company();
+            }
             
         }
 
         printf("\nYou have entered:\n");
-        printf("Unique master citizen number: %lu\n", jmbg);
+        printf("Unique master citizen number: %lli\n", jmbg);
         printf("First name: %s\n", first_name);
         printf("Last name: %s\n", last_name);
-        printf("Address: %s\n", address);
         printf("City: %s\n", city);
-        printf("Zip code: %ui\n", zip_code);
-        printf("Country: %s\n", country);
         printf("Mobile: %s\n", mobile);
-        printf("Email: %s\n", email);
-        printf("Gendure: %s\n", gendure);
         if(type == 1){
             printf("Personal number: %s\n", persional_number);
             printf("Passport number: %s\n", passport_number);
+        }else{
+            printf("Company id: %d\n", companyId);
         }
 
         printf("Click y/Y for confirm, any other key for quit\n");
@@ -165,9 +149,6 @@ void add_person(){
             printf("Add in db\n");
 
             MYSQL *connection;
-            MYSQL_RES *result;
-            MYSQL_ROW *row;
-            MYSQL_FIELD *field;
 
             char query[QUERY_SIZE];
             
@@ -177,27 +158,30 @@ void add_person(){
                     "root", "mydb", 0, NULL, 0) == NULL)
                     error_fatal("Connection error: %s\n", mysql_error(connection));
 
-            sprintf(query, "INSERT INTO Osoba values (\"%lu\", \"%s\", \"%s\", \"%s\", \"%s\", \"%u\", \"%s\", \"%s\", \"%s\", \"%s\");", jmbg, first_name, last_name, address, city, zip_code, country, mobile, email, gendure);
+            sprintf(query, "INSERT INTO Osoba values (\"%lli\", \"%s\", \"%s\", \"%s\", \"%s\");", jmbg, first_name, last_name, city, mobile);
 
             if(mysql_query(connection, query) != 0)
                 error_fatal("Query error %s\n", mysql_error(connection));
-            printf("%s\n", query);
 
             if(type == 0)
-                sprintf(query, "INSERT INTO Klijent(jmbg ,brojLicneKarte, brojPasosa) values (\"%lu\", \"%s\", \"%s\");", jmbg, persional_number, passport_number);
-            else
-                sprintf(query, "INSERT INTO Agent values (\"%lu\", \"%lu\");", jmbg, companyId);
-            printf("%s\n", query);
+                sprintf(query, "INSERT INTO Klijent(jmbg ,brojLicneKarte, brojPasosa) values (\"%lli\", \"%s\", \"%s\");", jmbg, persional_number, passport_number);
+            else if(type == 2)
+                sprintf(query, "INSERT INTO Agent values (\"%lli\", \"%d\");", jmbg, companyId);
+            else{
+                sprintf(query, "INSERT INTO Klijent(jmbg) values (\"%lli\");", jmbg);
+            }
+
             if(mysql_query(connection, query) != 0)
                 error_fatal("Query error %s\n", mysql_error(connection));
             
             printf("Finish with entry\n");
 
             mysql_close (connection);
-
+            return jmbg;
         }
     }  
     printf("exit\n");
+    return -1;
     
 }
 void list_company(){
@@ -235,12 +219,13 @@ void list_company(){
     mysql_close(connection);
 }
 
-void add_company(){
+int add_company(){
     char option;
     char name[COMPANY_NAME];
+    int companyId = -1;
 
     clrscr();
-    printf("Welcome to page for adding new company\n");
+    printf("Page for adding new company\n");
 
     printf("Click y/Y to begin with company registration, any other key for quit\n");
     scanf("%c", &option);
@@ -267,7 +252,6 @@ void add_company(){
             MYSQL *connection;
             MYSQL_RES *result;
             MYSQL_ROW *row;
-            MYSQL_FIELD *field;
 
             char query[QUERY_SIZE];
             
@@ -282,14 +266,24 @@ void add_company(){
             if(mysql_query(connection, query) != 0)
                 error_fatal("Query error %s\n", mysql_error(connection));
             
+            if(mysql_query(connection, LAST_INSERTED_ID) !=0)
+                error_fatal("Query error %s\n", mysql_error(connection));
+            
+            result = mysql_use_result(connection);
+            
+            row = mysql_fetch_row (result);
+            companyId = row[0];
+
             printf("Finish with entry\n");
+            mysql_free_result(result);
 
             mysql_close (connection);
+            
         }
 
     }
 
-
+    return companyId;
 }
 
 

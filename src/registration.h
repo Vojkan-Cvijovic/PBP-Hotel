@@ -14,9 +14,11 @@
 #define PASSPORT_NUMBER 45
 #define COMPANY_NAME 45
 
+#define LAST_INSERTED_ID "SELECT LAST_INSERT_ID();"
+
 void list_clients();
-void add_person();
-void add_company();
+long long add_person(int type);
+int add_company();
 void make_reservation();
 
 #endif
