@@ -1,7 +1,7 @@
 USE `mydb`;
 
 DELIMITER |
-CREATE DEFINER = CURRENT_USER TRIGGER `mydb`.`RezervisanaSoba_BEFORE_INSERT`
+CREATE DEFINER = CURRENT_USER TRIGGER `mydb`.`Match_Room`
 BEFORE INSERT ON `RezervisanaSoba` FOR EACH ROW
 BEGIN
 	SET NEW.idSobe = ( 	select s.id 
