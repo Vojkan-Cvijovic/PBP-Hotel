@@ -13,20 +13,42 @@ static void error_fatal(char *format, ...){
 
     exit(EXIT_FAILURE);
 }
+void make_new_reservation(MYSQL* connection){
+    printf("Select one type of reservation:\n");
+    printf("1) Full reservation\n");
+    printf("2) Partial reservation\n");
+    printf("3) Reservation with agent\n");
 
+    int reservation_option = -1;
+    scanf("%d", &reservation_option);
+
+    if(reservation_option != 1 && reservation_option != 2 && reservation_option !=3){
+        if(reservation_option == BACK_OPTION)
+            return;
+        printf("Error, unknown type, try again\n");
+        system("@cls||clear");
+        make_new_reservation(connection);
+    }
+    make_reservation(connection, reservation_option - 1);
+}
 
 void list_reservation(MYSQL *connection, int id, long long jmbg){
+/*  jmbg == -1 list for all
+    id == -1 list all reservations for jmbg
+    id != -1 and jmbg != -1 list reservation with id
+*/
     MYSQL_RES *result;
     MYSQL_ROW *row;
     MYSQL_FIELD *field;
 
     char query[QUERY_SIZE];
-    
-
-    if(id == -1)
+    if(jmbg == -1){
+        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id ;");
+    }else if(id == -1){
         sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id where o.jmbg = \"%lli\";", jmbg);
-    else
-        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id where r.id = \"%d\" and o.jmbg = \"%lli\";", id, jmbg);
+    }else{
+        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id where r.id = \"%d\";", id);
+    }
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
 
@@ -50,7 +72,7 @@ void list_reservation(MYSQL *connection, int id, long long jmbg){
 
 }
 
-void make_reservation(int option){
+void make_reservation(MYSQL* connection, int option){
     // option 0 : at reception
     // option 1 : client makes reservation over phone
     // option 2 : agent makes reservation over phone for client
@@ -59,17 +81,18 @@ void make_reservation(int option){
     long long agent_id = -1;
     char start_date[DATE_SIZE];
     char end_date[DATE_SIZE];
-    int rooms_count = 0;
-    MYSQL *connection;
 
     if(option == 2){
         printf("Enter agents id:\n");
         scanf("%ul", &agent_id);
         if(agent_id == -1)
             return;
-    }
+        }
+        printf("%d\n", option);
 
-    long long client_id = add_person(option == 2?option-1:option);
+    long long client_id = add_person(connection, option == 2? 1:option);
+    if(client_id == -1)
+        return;
 
     system("cal 1");
     printf("Start date: \n");
@@ -78,27 +101,21 @@ void make_reservation(int option){
     scanf("%s", end_date);
 
     printf("Choose room type: \n");
-
-    connection = mysql_init(NULL);
-    if(mysql_real_connect(connection, "localhost", "root", "root", "mydb", 0, NULL, 0) == NULL)
-        error_fatal("Connection error: %s\n", mysql_error(connection));
-    
-    list_rooms(connection, "2017/12/1", "2017/12/16");
+    list_rooms(connection, start_date, end_date);
 
     printf("Enter room type id:\n");
     int room_type_id;
     scanf("%d", &room_type_id);
 
     int reservation_id = add_reservation(connection, client_id ,option , agent_id, start_date, end_date, room_type_id);
+    printf("Reseravation id: %d\n", reservation_id);
 
     if(option == 0)
-         confirm_reservation(connection, 2);
+         confirm_reservation(connection, reservation_id);
 
-    mysql_close (connection);
     return ;
 
 }
-
 void confirm_reservation(MYSQL* connection, int reservation_id){ 
     char query[QUERY_SIZE];
 
@@ -115,6 +132,8 @@ void confirm_reservation(MYSQL* connection, int reservation_id){
     printf("Reservation has been confirmed\n");
 }
 int add_reservation(MYSQL* connection, long long client_id, int option, long long agent_id, char* start_date, char* end_date, int room_type_id){
+    // option 1 or 0 without agents id
+    // option 2 wuth agents id
     MYSQL_RES *result;
     MYSQL_ROW *row;
     MYSQL_FIELD *field;
@@ -129,13 +148,14 @@ int add_reservation(MYSQL* connection, long long client_id, int option, long lon
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
 
-    if(mysql_query(connection, LAST_INSERTED_ID) != 0)
+    if(mysql_query(connection, "SELECT MAX(id) from Rezervacija") != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
 
     result = mysql_use_result(connection);
+    int reservation_id = -1;
 
     row = mysql_fetch_row (result);
-    int reservation_id = row[0];
+    reservation_id = atoi(row[0]);
 
     mysql_free_result(result);
 
@@ -207,27 +227,27 @@ void make_payment(MYSQL* connection, int reservation_id){
     printf("Payment has been made!\n");
 }
 
-void select_reservation(long long jmbg){
-    system("@cls||clear");
-    MYSQL *connection;
-
-    connection = mysql_init(NULL);
-    
-    if(mysql_real_connect(connection, "localhost", "root", "root", "mydb", 0, NULL, 0) == NULL)
-            error_fatal("Connection error: %s\n", mysql_error(connection));
-
-    int id =1;
+void select_reservation(MYSQL *connection, long long persons_id){
+/*
+    persons_id == -1 list all
+*/
+    int id =0;
     char option;
 
     while(1){
-        system("@cls||clear");
-        printf("Select id of reservation:\n");
-        list_reservation(connection, id, jmbg);
-        printf("Enter id\n");
+        printf("%lli", persons_id);
+        if(persons_id == -1)
+            printf("List of all reservations\n");
+        else
+            printf("Select id of reservation:\n");
+        list_reservation(connection, id, persons_id);
+        printf("Enter id, %d for exit\n", BACK_OPTION);
         scanf("%d", &id);
-        system("@cls||clear");
+        if(id == BACK_OPTION)
+            return;
+
         printf("You have selected: \n");
-        list_reservation(connection, id, jmbg);
+        list_reservation(connection, id, persons_id);
 
         printf("Press y/Y to confirm selection\n");
         scanf("%c", &option);
@@ -239,7 +259,7 @@ void select_reservation(long long jmbg){
             printf("Select one of the options:\n");
                 printf("1) Confirm reservation\n");
                 printf("2) Call off reservation\n");
-                printf("3) Go to payments\n");
+                printf("3) Make payment\n");
             int option = 0;
             scanf("%d", &option);
             printf("%d\n",option);
@@ -253,10 +273,16 @@ void select_reservation(long long jmbg){
             break;
         }
     }
+}
+void select_existing_reservation(MYSQL* connection){
+    long long persons_id;
+    printf("Enter persons id:\n-1 for all\n%d for back\n", BACK_OPTION);
+    scanf("%lli", &persons_id);
     
-    mysql_close(connection);
-
-
+    if(persons_id == BACK_OPTION)
+        return;
+    
+    select_reservation(connection, persons_id);
 }
 
 void list_rooms(MYSQL *connection, char* start_date, char* end_date){

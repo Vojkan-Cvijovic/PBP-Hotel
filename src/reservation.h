@@ -11,7 +11,10 @@
 
 
 void list_reservation(MYSQL *connection,int id, long long jmbg);
-void select_reservation(long long jmbg);
-void make_reservation(int option);
+void select_reservation(MYSQL *connection, long long jmbg);
+void make_reservation(MYSQL* connection, int option);
+void make_new_reservation(MYSQL* connection);
+void select_existing_reservation(MYSQL* connection);
+int add_reservation(MYSQL* connection, long long client_id, int option, long long agent_id, char* start_date, char* end_date, int room_type_id);
 
 #endif

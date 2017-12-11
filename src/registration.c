@@ -56,11 +56,60 @@ void list_clients(){
     mysql_close(connection);
 
 }
+void checkIfPersonExists(){
+    printf("Enter persons id\n");
+    long long personsId;
+    scanf("%d\n", &personsId);
+    if(!isAvaliablePersonsId(personsId))
+        printf("Persons with id %lli does not exists\n", personsId);
+}
+int isAvaliablePersonsId(long long personsId){
+    MYSQL *connection;
+    MYSQL_RES *result;
+    MYSQL_ROW *row;
+    char query[QUERY_SIZE];
 
-long long add_person(int type){
-    // type 1: creates client full infomation
-    // type 2: creates client limited info
-    // type 3: creates agent and company
+    connection = mysql_init(NULL);
+
+    if(mysql_real_connect(connection, "localhost", "root", "root", "mydb", 0, NULL, 0) == NULL)
+        error_fatal("Connection error: %s\n", mysql_error(connection));
+
+    sprintf(query, "SELECT jmbg FROM Osoba WHERE jmbg = \"%lli\";", personsId);
+
+    if(mysql_query(connection, query) != 0)
+        error_fatal("Query error %s\n", mysql_error(connection));
+    
+    result = mysql_use_result(connection);
+
+    row = mysql_fetch_row(result);
+
+    if( row == NULL){
+        mysql_free_result(result);
+        return 1;
+    }
+
+    int num = mysql_num_fields (result);
+    int j;
+    for(j = 0; j< num; j++)
+        printf("%10s\t", (mysql_fetch_field(result))[0].name);
+    printf("\n");
+
+    int i;
+    while ((row = mysql_fetch_row (result)) != 0){
+        for (i = 0; i < num; i++)
+      printf ("%10s\t", row[i]);
+        printf ("\n");
+      }
+
+    mysql_free_result(result);
+    return 0;
+
+}
+
+long long add_person(MYSQL* connection, int type){
+    // type 0: creates client full infomation
+    // type 1: creates client limited info
+    // type 2: creates agent and company
 
     long long jmbg;
     int companyId;
@@ -91,6 +140,11 @@ long long add_person(int type){
         printf("Enter new clients unique master citizen number\n");
         scanf("%lli", &jmbg);
 
+        if(!isAvaliablePersonsId(jmbg)){
+            printf("There is all ready one person with id %lli\n", jmbg);
+            return jmbg;
+        }
+
         printf("Enter first name:\n");
         scanf("%s", first_name);
         printf("Enter last name:\n");
@@ -99,32 +153,23 @@ long long add_person(int type){
         scanf("%s", city);
         printf("Enter mobile number:\n");
         scanf("%s", mobile);
-
-        printf("Select type:\n1. Client\n2. Agent\nInsert 1 or 2\n");
-        int type;
-
-        while(1){
-            scanf("%d", &type);
-            if(type == 1 || type == 2)
-                break;
-            if(type == -1)
-                return;
-        }
         
-        if(type == 0){
+        if(type == FULL_REGISTRATION_TYPE){
             printf("Enter personal number:\n");
             scanf("%s", persional_number);
     
             printf("Enter passport number:\n");
             scanf("%s", passport_number);
-        }else if(type == 2){
-            list_company();
+        }else if(type == AGENT_REGISTRATION_TYPE){
+            list_company(connection);
             printf("Choose id of company from above\n");
+            printf("Enter -1 for new company, %d for exit\n" , BACK_OPTION);
             scanf("%d", &companyId);
-            if(companyId < 0){
-                companyId = add_company();
+            if(companyId == BACK_OPTION)
+                return;
+            if(companyId == -1){
+                companyId = add_company(connection);
             }
-            
         }
 
         printf("\nYou have entered:\n");
@@ -133,10 +178,10 @@ long long add_person(int type){
         printf("Last name: %s\n", last_name);
         printf("City: %s\n", city);
         printf("Mobile: %s\n", mobile);
-        if(type == 1){
+        if(type == FULL_REGISTRATION_TYPE){
             printf("Personal number: %s\n", persional_number);
             printf("Passport number: %s\n", passport_number);
-        }else{
+        }else if(type == AGENT_REGISTRATION_TYPE){
             printf("Company id: %d\n", companyId);
         }
 
@@ -146,18 +191,8 @@ long long add_person(int type){
             scanf("%c", &option);
 
         if(option == 'y' || option == 'Y'){
-            printf("Add in db\n");
-
-            MYSQL *connection;
-
             char query[QUERY_SIZE];
             
-            connection = mysql_init(NULL);
-
-            if(mysql_real_connect(connection, "localhost", "root",
-                    "root", "mydb", 0, NULL, 0) == NULL)
-                    error_fatal("Connection error: %s\n", mysql_error(connection));
-
             sprintf(query, "INSERT INTO Osoba values (\"%lli\", \"%s\", \"%s\", \"%s\", \"%s\");", jmbg, first_name, last_name, city, mobile);
 
             if(mysql_query(connection, query) != 0)
@@ -175,29 +210,19 @@ long long add_person(int type){
                 error_fatal("Query error %s\n", mysql_error(connection));
             
             printf("Finish with entry\n");
-
-            mysql_close (connection);
             return jmbg;
         }
     }  
-    printf("exit\n");
+
     return -1;
     
 }
-void list_company(){
-    MYSQL *connection;
+void list_company(MYSQL* connection){
     MYSQL_RES *result;
     MYSQL_ROW *row;
     MYSQL_FIELD *field;
 
     char query[QUERY_SIZE];
-    
-    connection = mysql_init(NULL);
-
-    if(mysql_real_connect(connection, "localhost", "root",
-         "root", "mydb", 0, NULL, 0) == NULL)
-         error_fatal("Connection error: %s\n", mysql_error(connection));
-
     sprintf(query, "SELECT idFirme, naziv from Firma");
 
     if(mysql_query(connection, query) != 0)
@@ -216,10 +241,9 @@ void list_company(){
       }
 
     mysql_free_result(result);
-    mysql_close(connection);
 }
 
-int add_company(){
+int add_company(MYSQL* connection){
     char option;
     char name[COMPANY_NAME];
     int companyId = -1;
@@ -247,20 +271,10 @@ int add_company(){
             scanf("%c", &option);
 
         if(option == 'y' || option == 'Y'){
-            printf("Add in db\n");
-
-            MYSQL *connection;
             MYSQL_RES *result;
             MYSQL_ROW *row;
 
             char query[QUERY_SIZE];
-            
-            connection = mysql_init(NULL);
-
-            if(mysql_real_connect(connection, "localhost", "root",
-                    "root", "mydb", 0, NULL, 0) == NULL)
-                    error_fatal("Connection error: %s\n", mysql_error(connection));
-
             sprintf(query, "INSERT INTO Firma(naziv) values (\"%s\");", name);
 
             if(mysql_query(connection, query) != 0)
@@ -276,9 +290,6 @@ int add_company(){
 
             printf("Finish with entry\n");
             mysql_free_result(result);
-
-            mysql_close (connection);
-            
         }
 
     }
@@ -286,6 +297,10 @@ int add_company(){
     return companyId;
 }
 
+void register_agent(MYSQL* connection){
 
+    add_person(connection, AGENT_REGISTRATION_TYPE);
+
+}
 
 

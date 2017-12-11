@@ -17,4 +17,3 @@ values (1309992169985, "Sonja", "Dzelatovic", "Smederevo", "0607816250");
 
 insert into Osoba (jmbg, ime, prezime, grad, brojMobilnogTelefona)
 values (1309992119955, "Filip", "Milanko", "Beograd", "0607850250");
-

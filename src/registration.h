@@ -14,11 +14,22 @@
 #define PASSPORT_NUMBER 45
 #define COMPANY_NAME 45
 
+#define BACK_OPTION -2
+#define ALL_OPTION -1
+#define FULL_REGISTRATION_TYPE 0
+#define PARTIAL_REGISTRATION_TYPE 1
+#define AGENT_REGISTRATION_TYPE 2
+
+
+
 #define LAST_INSERTED_ID "SELECT LAST_INSERT_ID();"
 
 void list_clients();
-long long add_person(int type);
+void register_agent(MYSQL* connection);
+long long add_person(MYSQL* connection, int type);
 int add_company();
 void make_reservation();
+int isAvaliablePersonsId(long long id);
+void checkIfPersonExists();
 
 #endif
