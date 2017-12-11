@@ -15,6 +15,8 @@ echo "Database $DATABASE_NAME created\n"
 echo "Creating triggers"
 mysql -u $USER $PASS $DATABASE_NAME < ./triggers/MatchDefaultStatusWithReservation.sql
 mysql -u $USER $PASS $DATABASE_NAME < ./triggers/CalculatePrice.sql
+mysql -u $USER $PASS $DATABASE_NAME < ./triggers/AddRoom.sql
+mysql -u $USER $PASS $DATABASE_NAME < ./triggers/AssignRoomToStaff.sql
 echo "Triggers are created\n"
 
 #import data

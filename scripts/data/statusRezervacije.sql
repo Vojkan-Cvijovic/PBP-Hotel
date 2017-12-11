@@ -5,5 +5,3 @@ insert into StatusRezervacije(status, opis) values ("potvrdjeno", "Status koji o
 insert into StatusRezervacije(status, opis) values ("otkazano", "Status koji oznacava da je rezervacija otkazana");
 
 
-
-

@@ -1,8 +1,6 @@
 USE `mydb`;
 
-insert into TipPlacanja (tipPlacanja, opis, aktivno) values ("Gotovinski", "Placanje se obavlja u papirnom novcu", 1);
-insert into TipPlacanja (tipPlacanja, opis, aktivno) values ("Ziro promet", "Placanje koje se ostvaruje koriscenjem tekucih racuna", 1);
-insert into TipPlacanja (tipPlacanja, opis, aktivno) values ("Cekovni promet", "Placanje cekovima gradjana", 0);
-
-
+insert into TipPlacanja (tipPlacanja, opis) values ("Gotovinski", "Placanje se obavlja u papirnom novcu");
+insert into TipPlacanja (tipPlacanja, opis) values ("Ziro promet", "Placanje koje se ostvaruje koriscenjem tekucih racuna");
+insert into TipPlacanja (tipPlacanja, opis) values ("Cekovni promet", "Placanje cekovima gradjana");
 
