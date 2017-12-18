@@ -115,14 +115,9 @@ long long add_person(MYSQL* connection, int type){
     int companyId;
     char first_name[FIRST_NAME_SIZE];
     char last_name[LAST_NAME_SIZE];
-    char address[ADDRESS_SIZE];
     char city[CITY_NAME_SIZE];
-    unsigned int zip_code;
     char country[COUNTRY_NAME_SIZE];
     char mobile[MOBILE_PHONE_SIZE];
-    char email[EMAIL_SIZE];
-    char gendure[GENURE_SIZE];
-    char phone_number[PHONE_NUMBER_SIZE];
     char persional_number[PERSIONAL_NUMBER_SIZE];
     char passport_number[PASSPORT_NUMBER];
     char option;
@@ -153,7 +148,6 @@ long long add_person(MYSQL* connection, int type){
         scanf("%s", city);
         printf("Enter mobile number:\n");
         scanf("%s", mobile);
-        
         if(type == FULL_REGISTRATION_TYPE){
             printf("Enter personal number:\n");
             scanf("%s", persional_number);
@@ -301,6 +295,62 @@ void register_agent(MYSQL* connection){
 
     add_person(connection, AGENT_REGISTRATION_TYPE);
 
+}
+void assign_room_to(MYSQL* connection, int id){
+    MYSQL_RES *result;
+    MYSQL_ROW *row;
+
+    char query[QUERY_SIZE];
+    sprintf(query, "INSERT INTO DodeljenaSoba(idOsoblja) values (%d);", id);
+
+    if(mysql_query(connection, query) != 0)
+        error_fatal("Query error %s\n", mysql_error(connection));
+
+    sprintf(query, "SELECT idSobe FROM DodeljenaSoba WHERE idOsoblja = %d", id);
+
+    if(mysql_query(connection, query) != 0)
+        error_fatal("Query error %s\n", mysql_error(connection));
+
+    result = mysql_use_result(connection);
+    int roomId = -1;
+    
+    row = mysql_fetch_row (result);
+    roomId = atoi(row[0]);
+    mysql_free_result(result);
+    printf("Room %d is assigned\n", roomId);
+}
+void list_all_staff(MYSQL* connection){
+    MYSQL_RES *result;
+    MYSQL_ROW *row;
+
+    char query[QUERY_SIZE];
+    sprintf(query, "select id, ime, prezime from Osoblje where id not in (select idOsoblja from DodeljenaSoba);");
+
+    if(mysql_query(connection, query) != 0)
+        error_fatal("Query error %s\n", mysql_error(connection));
+
+    result = mysql_use_result(connection);
+
+    int num = mysql_num_fields (result);
+    int i;
+    printf("All staff without assigned room\n");
+    while ((row = mysql_fetch_row (result)) != 0){
+        for (i = 0; i < num; i++)
+      printf ("%s\t", row[i]);
+        printf ("\n");
+      } 
+
+    mysql_free_result(result);
+}
+
+void assign_room(MYSQL* connection){
+    list_all_staff(connection);
+    printf("Select id:\n<0 to go back\n");
+    int staffId;
+    scanf("%d", &staffId);
+    if(staffId < 0)
+        return;
+    assign_room_to(connection, staffId);
 }
 
 

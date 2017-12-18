@@ -118,6 +118,8 @@ void make_reservation(MYSQL* connection, int option){
 }
 void confirm_reservation(MYSQL* connection, int reservation_id){ 
     char query[QUERY_SIZE];
+    MYSQL_RES *result;
+    MYSQL_ROW *row;
 
     sprintf(query, "UPDATE Rezervacija SET idStatusaRezervacije = (select id from StatusRezervacije where status = \"potvrdjeno\") WHERE id = \"%d\"", reservation_id);
 
@@ -128,15 +130,27 @@ void confirm_reservation(MYSQL* connection, int reservation_id){
 
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
-    
-    printf("Reservation has been confirmed\n");
+
+    sprintf(query, "SELECT idSobe from RezervisanaSoba where idRezervacije = \"%d\");", reservation_id);
+
+    if(mysql_query(connection, query) != 0)
+        error_fatal("Query error %s\n", mysql_error(connection));
+
+    result = mysql_use_result(connection);
+    int roomId = -1;
+
+    row = mysql_fetch_row (result);
+    roomId = atoi(row[0]);
+
+    mysql_free_result(result);
+
+    printf("Reservation has been confirmed, room id is %d\n", roomId);
 }
 int add_reservation(MYSQL* connection, long long client_id, int option, long long agent_id, char* start_date, char* end_date, int room_type_id){
     // option 1 or 0 without agents id
     // option 2 wuth agents id
     MYSQL_RES *result;
     MYSQL_ROW *row;
-    MYSQL_FIELD *field;
     
     char query[QUERY_SIZE];
 
@@ -187,7 +201,6 @@ void list_payments(MYSQL* connection){
     char query[QUERY_SIZE];
     MYSQL_RES *result;
     MYSQL_ROW *row;
-    MYSQL_FIELD *field;
 
     sprintf(query, "SELECT id, tipPlacanja FROM TipPlacanja");
 
@@ -213,7 +226,8 @@ void list_payments(MYSQL* connection){
 
 }
 void make_payment(MYSQL* connection, int reservation_id){
-
+    MYSQL_RES *result;
+    MYSQL_ROW *row;
     int payment_id;
     printf("Select payment method\n");
     list_payments(connection);
@@ -224,7 +238,19 @@ void make_payment(MYSQL* connection, int reservation_id){
 
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
-    printf("Payment has been made!\n");
+
+    sprintf(query, "SELECT suma FROM Placanje where idRezervacije = \"%d\";", reservation_id);
+
+    if(mysql_query(connection, query) != 0)
+        error_fatal("Query error %s\n", mysql_error(connection));
+
+    result = mysql_use_result(connection);
+    int sum = -1;
+
+    row = mysql_fetch_row (result);
+    sum = atoi(row[0]);
+
+    printf("Total cost is %d\n", sum);
 }
 
 void select_reservation(MYSQL *connection, long long persons_id){

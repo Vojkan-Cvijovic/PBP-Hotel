@@ -31,5 +31,6 @@ int add_company();
 void make_reservation();
 int isAvaliablePersonsId(long long id);
 void checkIfPersonExists();
+void assign_room(MYSQL* connection);
 
 #endif
