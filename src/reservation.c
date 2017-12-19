@@ -41,13 +41,16 @@ void list_reservation(MYSQL *connection, int id, long long jmbg){
     MYSQL_ROW *row;
     MYSQL_FIELD *field;
 
+    printf("%d %d\n", id, jmbg);
+
     char query[QUERY_SIZE];
-    if(jmbg == -1){
-        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id ;");
-    }else if(id == -1){
-        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id where o.jmbg = \"%lli\";", jmbg);
-    }else{
+    if(id != -1){
         sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id where r.id = \"%d\";", id);
+    }else if(jmbg == -1){
+        printf("Sve\n");
+        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id ;");
+    }else{
+        sprintf(query, "SELECT r.id, o.ime, o.prezime, s.status, o.brojMobilnogTelefona \"broj mob.\", datumPocetka, datumZavrsetka, t.tipSobe from Rezervacija r join Klijent k on r.idKlijenta = k.jmbg join Osoba o on o.jmbg = k.jmbg join StatusRezervacije s on r.idStatusaRezervacije = s.id join TipSobe t on r.id = t.id where o.jmbg = \"%lli\";", jmbg);
     }
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
@@ -95,9 +98,9 @@ void make_reservation(MYSQL* connection, int option){
         return;
 
     system("cal 1");
-    printf("Start date: \n");
+    printf("Start date in format YYYY-MM-DD: \n");
     scanf("%s", start_date);
-    printf("End date: \n");
+    printf("End date in format YYYY-MM-DD: \n");
     scanf("%s", end_date);
 
     printf("Choose room type: \n");
@@ -121,17 +124,15 @@ void confirm_reservation(MYSQL* connection, int reservation_id){
     MYSQL_RES *result;
     MYSQL_ROW *row;
 
-    sprintf(query, "UPDATE Rezervacija SET idStatusaRezervacije = (select id from StatusRezervacije where status = \"potvrdjeno\") WHERE id = \"%d\"", reservation_id);
+    sprintf(query, "UPDATE Rezervacija SET idStatusaRezervacije = (select id from StatusRezervacije where status = \"potvrdjeno\") WHERE id = \"%d\";", reservation_id);
 
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
-
     sprintf(query, "INSERT INTO RezervisanaSoba (idRezervacije) VALUES (\"%d\");", reservation_id);
 
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
-
-    sprintf(query, "SELECT idSobe from RezervisanaSoba where idRezervacije = \"%d\");", reservation_id);
+    sprintf(query, "SELECT idSobe from RezervisanaSoba where idRezervacije = \"%d\";", reservation_id);
 
     if(mysql_query(connection, query) != 0)
         error_fatal("Query error %s\n", mysql_error(connection));
@@ -250,14 +251,14 @@ void make_payment(MYSQL* connection, int reservation_id){
     row = mysql_fetch_row (result);
     sum = atoi(row[0]);
 
-    printf("Total cost is %d\n", sum);
+    printf("Total cost is %d e\n", sum);
 }
 
 void select_reservation(MYSQL *connection, long long persons_id){
 /*
     persons_id == -1 list all
 */
-    int id =0;
+    int id =-1;
     char option;
 
     while(1){
@@ -298,6 +299,7 @@ void select_reservation(MYSQL *connection, long long persons_id){
             }
             break;
         }
+        id = -1;
     }
 }
 void select_existing_reservation(MYSQL* connection){

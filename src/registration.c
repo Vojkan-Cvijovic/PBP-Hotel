@@ -191,7 +191,7 @@ long long add_person(MYSQL* connection, int type){
 
             if(mysql_query(connection, query) != 0)
                 error_fatal("Query error %s\n", mysql_error(connection));
-
+            printf("Insert into osoba\n");
             if(type == 0)
                 sprintf(query, "INSERT INTO Klijent(jmbg ,brojLicneKarte, brojPasosa) values (\"%lli\", \"%s\", \"%s\");", jmbg, persional_number, passport_number);
             else if(type == 2)
