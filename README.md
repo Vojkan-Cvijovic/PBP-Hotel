@@ -1,7 +1,7 @@
 # PBP-Hotel
 Hotel Management System on course Database Design
 
-
-execute /scripts/onboarding.sh
-run make in src file
-run ./hotel
+How to set up:
+* execute /scripts/onboarding.sh
+* run make in src file
+* run ./hotel
